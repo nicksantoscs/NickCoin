@@ -62,4 +62,34 @@ class Blockchain(object):
         block_string = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
 
+    def proof_of_work(self, last_proof):
+        """
+        Very simple PoW algorithm:
+        - find number p' such that hash(pp') contains leading 4 zeroes, where p is
+        - p is the previous proof, and p' is the new proof
+        :param last_proof: <int>
+        :return: <int>
+        """
+
+        proof = 0
+        while self.valid_proof(last_proof, proof) is False:
+            proof += 1
+        return proof
     
+    @staticmethod
+    def valid_proof(last_proof, proof):
+        """
+        validates the proof: does hash(last_proof, proof) contain 4 leading zeros?
+        :param last_proof: <int> previous proof
+        :param proof: <int> current proof
+        :return: <bool> true if correct, false if not.
+        """
+
+        guess = f'{last_proof}{proof}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        return guess_hash[:4] == "0000"
+
+# todo: setup python flask
+# /transactions/new -> creates new transaction to a block
+# /mine             -> tells server to mine a new block
+# /chain            -> returns full Blockchain
