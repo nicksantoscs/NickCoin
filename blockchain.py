@@ -122,6 +122,33 @@ class Blockchain(object):
         return True
     
     def resolve_conflicts(self):
+        """
+        Consensus Algorithm, resolves conflicts by replacing our chain with the longest one in the network
+        :return: <bool> true if our chain was replaced, false if not
+        """
+        neighbours = self.nodes
+        new_chain = None
+
+        # looking for chains longer than ours
+        max_length = len(self.chain)
+
+        # grab and verify the chains from all the nodes in our network
+        for node in neighbours:
+            response = requests.get(f'http://{node}/chain')
+
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+
+                # check if the length is longer and the chain is valid
+                if length > max_length and self.valid_chain(chain):
+                    max_length = length
+                    new_chain = chain
+        
+        if new_chain:
+            self.chain = new_chain
+            return True
+        return False
 
 # todo: setup python flask
 # /transactions/new -> creates new transaction to a block
@@ -183,6 +210,8 @@ def full_chain():
         'length': len(blockchain.chain),
     }
     return jsonify(response), 200
+
+@app.route('/nodes/register', methods=['POST'])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
